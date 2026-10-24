@@ -5,6 +5,7 @@ import ServiceManagement
 @MainActor
 final class SettingsWindow: NSObject, NSWindowDelegate {
     private let notifier: Notifier
+    private let shortcutRecorder: ShortcutRecorder
     private let scopedLimitName: () -> String?
     private let onChange: () -> Void
     private var window: NSWindow?
@@ -14,15 +15,30 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
     private let sessionField = NSTextField()
     private let weekField = NSTextField()
     private let scopedField = NSTextField()
+    private let codexField = NSTextField()
     private let notifications = NSButton(checkboxWithTitle: "Notify when a limit passes its threshold", target: nil, action: nil)
     private let permissionNote = NSTextField(wrappingLabelWithString: "")
     private let openSystemSettings = NSButton(title: "Open Notification Settings", target: nil, action: nil)
     private let iconPopup = NSPopUpButton()
+    private let viewMode = NSPopUpButton()
     private let dot = NSButton(checkboxWithTitle: "Show a red dot on the icon past a threshold", target: nil, action: nil)
+    private lazy var claudeColors = ColorPicker(label: "Claude color", selection: Settings.claudeColor) { [weak self] color in
+        Settings.claudeColor = color
+        self?.onChange()
+    }
+    private lazy var fableColors = ColorPicker(label: "Fable color", selection: Settings.fableColor) { [weak self] color in
+        Settings.fableColor = color
+        self?.onChange()
+    }
+    private lazy var codexColors = ColorPicker(label: "Codex color", selection: Settings.codexColor) { [weak self] color in
+        Settings.codexColor = color
+        self?.onChange()
+    }
     private let launch = NSButton(checkboxWithTitle: "Launch at login", target: nil, action: nil)
 
-    init(notifier: Notifier, scopedLimitName: @escaping () -> String?, onChange: @escaping () -> Void) {
+    init(notifier: Notifier, shortcut: GlobalShortcut, scopedLimitName: @escaping () -> String?, onChange: @escaping () -> Void) {
         self.notifier = notifier
+        self.shortcutRecorder = ShortcutRecorder(shortcut: shortcut)
         self.scopedLimitName = scopedLimitName
         self.onChange = onChange
         super.init()
@@ -38,10 +54,13 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
 
     private func makeWindow() -> NSWindow {
         let grid = NSGridView(views: [
-            [label("Warning thresholds"), NSGridCell.emptyContentView],
+            [label("View"), viewMode],
+            [NSGridCell.emptyContentView, NSGridCell.emptyContentView],
+            [label("Claude thresholds"), NSGridCell.emptyContentView],
             [label("Current session", secondary: true), percentRow(sessionField)],
             [label("This week", secondary: true), percentRow(weekField)],
             [scopedLabel, percentRow(scopedField)],
+            [label("Codex limits"), percentRow(codexField)],
             [NSGridCell.emptyContentView, NSGridCell.emptyContentView],
             [label("Notifications"), notifications],
             [NSGridCell.emptyContentView, permissionNote],
@@ -50,19 +69,23 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             [label("Menu bar"), iconPopup],
             [NSGridCell.emptyContentView, dot],
             [NSGridCell.emptyContentView, NSGridCell.emptyContentView],
+            [label("Claude color"), claudeColors],
+            [label("Fable color"), fableColors],
+            [label("Codex color"), codexColors],
+            [NSGridCell.emptyContentView, label("Warnings always turn red.", secondary: true)],
+            [NSGridCell.emptyContentView, NSGridCell.emptyContentView],
+            [label("Menu shortcut"), shortcutRecorder],
             [label("General"), launch],
         ])
         grid.rowSpacing = 8
         grid.columnSpacing = 12
         grid.column(at: 0).xPlacement = .trailing
         grid.column(at: 0).width = 150
-        grid.row(at: 4).height = 4
-        grid.row(at: 8).height = 4
-        grid.row(at: 11).height = 4
+        for row in [1, 7, 11, 14, 19] { grid.row(at: row).height = 4 }
         scopedLabel.font = .systemFont(ofSize: 13)
         self.grid = grid
 
-        for (field, selector) in [(sessionField, #selector(thresholdChanged)), (weekField, #selector(thresholdChanged)), (scopedField, #selector(thresholdChanged))] {
+        for (field, selector) in [(sessionField, #selector(thresholdChanged)), (weekField, #selector(thresholdChanged)), (scopedField, #selector(thresholdChanged)), (codexField, #selector(thresholdChanged))] {
             field.target = self
             field.action = selector
         }
@@ -79,6 +102,9 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             iconPopup.lastItem?.representedObject = icon.rawValue
             iconPopup.lastItem?.image = NSImage(systemSymbolName: icon.rawValue, accessibilityDescription: nil)
         }
+        viewMode.addItems(withTitles: ["Detailed", "Compact"])
+        viewMode.target = self
+        viewMode.action = #selector(viewModeChanged)
         iconPopup.target = self
         iconPopup.action = #selector(iconChanged)
         dot.target = self
@@ -139,10 +165,16 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
 
     private func load() {
         let t = Settings.thresholds
+        shortcutRecorder.load()
         scopedLabel.stringValue = scopedLimitName().map { "\($0) this week" } ?? "Model this week"
         sessionField.integerValue = t.session
         weekField.integerValue = t.weeklyAll
         scopedField.integerValue = t.weeklyScoped
+        codexField.integerValue = Settings.codexWarningThreshold
+        viewMode.selectItem(at: Settings.compactView ? 1 : 0)
+        claudeColors.selection = Settings.claudeColor
+        fableColors.selection = Settings.fableColor
+        codexColors.selection = Settings.codexColor
         notifications.state = Settings.notificationsEnabled ? .on : .off
         iconPopup.selectItem(at: Settings.Icon.allCases.firstIndex(of: Settings.icon) ?? 0)
         dot.state = Settings.showsWarningDot ? .on : .off
@@ -175,6 +207,7 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
             weeklyAll: clamp(weekField.integerValue),
             weeklyScoped: clamp(scopedField.integerValue)
         )
+        Settings.codexWarningThreshold = clamp(codexField.integerValue)
         load()
         onChange()
     }
@@ -195,6 +228,11 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
         if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
             NSWorkspace.shared.open(url)
         }
+    }
+
+    @objc private func viewModeChanged() {
+        Settings.compactView = viewMode.indexOfSelectedItem == 1
+        onChange()
     }
 
     @objc private func iconChanged() {
@@ -222,7 +260,12 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
         }
     }
 
+    func windowDidResignKey(_ notification: Notification) {
+        shortcutRecorder.cancelRecording()
+    }
+
     func windowWillClose(_ notification: Notification) {
+        shortcutRecorder.cancelRecording()
         // Commit a threshold that was typed but not confirmed with Return or Tab.
         window?.makeFirstResponder(nil)
     }

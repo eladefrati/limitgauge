@@ -22,16 +22,20 @@ public struct RateLimit: Equatable, Sendable, Codable {
     public var resetsAt: Date
     /// Model or surface name for a scoped limit, e.g. "Fable". Nil for the unscoped limits.
     public var scopeName: String?
+    /// Provider-supplied row label; identity remains in kind for warning deduplication.
+    public var displayTitle: String?
 
-    public init(kind: Kind, percent: Int, resetsAt: Date, scopeName: String? = nil) {
+    public init(kind: Kind, percent: Int, resetsAt: Date, scopeName: String? = nil, displayTitle: String? = nil) {
         self.kind = kind
         self.percent = percent
         self.resetsAt = resetsAt
         self.scopeName = scopeName
+        self.displayTitle = displayTitle
     }
 
     /// Row title as shown on the Usage page.
     public var title: String {
+        if let displayTitle { return displayTitle }
         switch kind {
         case .session: return Kind.session.title
         case .weeklyAll: return "This week"
@@ -135,6 +139,13 @@ public struct UsageSnapshot: Equatable, Sendable, Codable {
 
     public func limit(_ kind: RateLimit.Kind) -> RateLimit? {
         limits.first { $0.kind == kind }
+    }
+
+    /// The main Codex weekly window. Its stable identity is produced by CodexUsageReader
+    /// from bucket ID and duration, independent of primary/secondary slot or display label.
+    /// Never substitute another bucket or a shorter window in a weekly compact view.
+    public var codexWeeklyLimit: RateLimit? {
+        limits.first { $0.kind == .other("codex:codex:10080") }
     }
 
     /// The endpoint drops the session limit while no five-hour window is open, so the menu
