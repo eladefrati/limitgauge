@@ -68,7 +68,9 @@ final class StatusMenu: NSObject, NSMenuDelegate {
         updatedItem.isEnabled = false
         let settings = NSMenuItem(title: "Settings\u{2026}", action: #selector(showSettings), keyEquivalent: ",")
         settings.target = self
-        let quit = NSMenuItem(title: "Quit limitgauge", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        // Not terminate(_:) directly: macOS 26 gives items with that action an icon of its own.
+        let quit = NSMenuItem(title: "Quit limitgauge", action: #selector(self.quit), keyEquivalent: "q")
+        quit.target = self
         [footerSeparator, updatedItem, refreshItem, .separator(), settings, quit].forEach(menu.addItem)
     }
 
@@ -168,6 +170,10 @@ final class StatusMenu: NSObject, NSMenuDelegate {
 
     @objc private func showSettings() {
         openSettings()
+    }
+
+    @objc private func quit() {
+        NSApp.terminate(nil)
     }
 
     private func updateIcon() {
