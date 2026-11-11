@@ -25,6 +25,10 @@ The [proposal](proposal.md) is kept as written. These parts of it no longer hold
   once they are on, if its window is still open: at once when you turn on limitgauge's switch,
   and at the next refresh when you allow notifications in System Settings. See
   [ADR-0005](adr/0005-warnings-counted-on-delivery.md).
+- **Limit resets.** The proposal shows the grants, or "No resets right now". The endpoint
+  withholds the grants from limitgauge and says so in `ineligible_reason`, so an empty list
+  doesn't mean the account has none. The menu hides the row whenever the endpoint gives a
+  reason.
 - **Test fixtures.** The proposal calls for a redacted real response. The fixtures are
   synthetic, in the real response's shape, so no account's usage is in the repository.
 - **The Anthropic mark.** It is not one of the icon choices. It was dropped on trademark
