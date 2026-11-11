@@ -180,7 +180,7 @@ public enum UsageDecoding {
     }
 
     /// Decodes a usage response. Throws only when `limits[]` is missing or unreadable.
-    public static func snapshot(from data: Data, fetchedAt: Date = Date()) throws -> UsageSnapshot {
+    public static func snapshot(from data: Data, fetchedAt: Date = Date()) throws(Error) -> UsageSnapshot {
         let raw: UsageResponse
         do {
             raw = try JSONDecoder().decode(UsageResponse.self, from: data)
@@ -237,7 +237,7 @@ public enum UsageDecoding {
                              unreadableLimitKinds: unreadable.isEmpty ? nil : unreadable, fetchedAt: fetchedAt)
     }
 
-    public static func plan(from data: Data) throws -> Plan {
+    public static func plan(from data: Data) throws(Error) -> Plan {
         let raw: ProfileResponse
         do {
             raw = try JSONDecoder().decode(ProfileResponse.self, from: data)

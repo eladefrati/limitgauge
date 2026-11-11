@@ -43,10 +43,8 @@ public struct UsageAPI: Sendable {
         let data = try await get(Self.usageURL, token: token)
         do {
             return try UsageDecoding.snapshot(from: data)
-        } catch let e as UsageDecoding.Error {
-            throw .decoding(e)
         } catch {
-            throw .decoding(.malformedJSON)
+            throw .decoding(error)
         }
     }
 
@@ -54,10 +52,8 @@ public struct UsageAPI: Sendable {
         let data = try await get(Self.profileURL, token: token)
         do {
             return try UsageDecoding.plan(from: data)
-        } catch let e as UsageDecoding.Error {
-            throw .decoding(e)
         } catch {
-            throw .decoding(.malformedJSON)
+            throw .decoding(error)
         }
     }
 
