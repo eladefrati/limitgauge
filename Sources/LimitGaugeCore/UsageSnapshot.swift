@@ -71,26 +71,22 @@ public struct UsageCredits: Equatable, Sendable, Codable {
     public var used: Decimal
     public var currency: String
     public var balance: Decimal?
-    public var extraUsageEnabled: Bool
 
-    public init(used: Decimal, currency: String, balance: Decimal?, extraUsageEnabled: Bool) {
+    public init(used: Decimal, currency: String, balance: Decimal?) {
         self.used = used
         self.currency = currency
         self.balance = balance
-        self.extraUsageEnabled = extraUsageEnabled
     }
 }
 
 /// The "Limit resets" section. Grants are kept as opaque labels until their shape is known.
 public struct LimitResets: Equatable, Sendable, Codable {
-    public var eligible: Bool
     public var grants: [String]
     /// Set when the endpoint withholds the grants from this client ("surface": it serves them
     /// only to Claude Code itself), so an empty `grants` does not mean the account has none.
     public var ineligibleReason: String?
 
-    public init(eligible: Bool, grants: [String], ineligibleReason: String? = nil) {
-        self.eligible = eligible
+    public init(grants: [String], ineligibleReason: String? = nil) {
         self.grants = grants
         self.ineligibleReason = ineligibleReason
     }
@@ -222,17 +218,11 @@ public enum UsageDecoding {
 
         let credits = raw.spend?.value.flatMap { s -> UsageCredits? in
             guard let used = s.used else { return nil }
-            return UsageCredits(
-                used: used.decimal,
-                currency: used.currency ?? "USD",
-                balance: s.balance?.decimal,
-                extraUsageEnabled: raw.extra_usage?.value?.is_enabled ?? false
-            )
+            return UsageCredits(used: used.decimal, currency: used.currency ?? "USD", balance: s.balance?.decimal)
         }
 
         let resets = raw.cedar_ember?.value.map { c in
-            LimitResets(eligible: c.eligible ?? false, grants: (c.grants ?? []).map(\.label),
-                        ineligibleReason: c.ineligible_reason)
+            LimitResets(grants: (c.grants ?? []).map(\.label), ineligibleReason: c.ineligible_reason)
         }
 
         let breakdown = raw.seven_day_breakdown?.value?.rows.map { rows in
@@ -270,7 +260,6 @@ struct UsageResponse: Decodable {
     var limits: Lenient<[LenientRawLimit]>?
     var iguana_necktie: Lenient<RawDollarWindow>?
     var spend: Lenient<RawSpend>?
-    var extra_usage: Lenient<RawExtraUsage>?
     var cedar_ember: Lenient<RawResets>?
     var seven_day_breakdown: Lenient<RawBreakdown>?
 }
@@ -357,10 +346,6 @@ struct RawSpend: Decodable {
     var balance: RawMoney?
 }
 
-struct RawExtraUsage: Decodable {
-    var is_enabled: Bool?
-}
-
 struct RawResets: Decodable {
     struct Grant: Decodable {
         var id: String?
@@ -368,7 +353,6 @@ struct RawResets: Decodable {
             id ?? "grant"
         }
     }
-    var eligible: Bool?
     var ineligible_reason: String?
     var grants: [Grant]?
 }

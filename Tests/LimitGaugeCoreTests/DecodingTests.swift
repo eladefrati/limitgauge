@@ -49,10 +49,8 @@ private func utc(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ mi: Int, _ s: Double
         #expect(credits.used == 0)
         #expect(credits.currency == "USD")
         #expect(credits.balance == nil)
-        #expect(credits.extraUsageEnabled == false)
 
         let resets = try #require(snap.limitResets)
-        #expect(resets.eligible == false)
         #expect(resets.grants.isEmpty)
         #expect(resets.ineligibleReason == nil)
 
@@ -209,13 +207,11 @@ private func utc(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ mi: Int, _ s: Double
         let data = Data("""
         {"limits": [{"kind": "session", "percent": 1, "resets_at": "2026-11-01T00:00:00+00:00"}],
          "spend": {"used": {"amount_minor": 1234, "currency": "USD", "exponent": 2},
-                   "balance": {"amount_minor": 5000, "currency": "USD", "exponent": 2}},
-         "extra_usage": {"is_enabled": true}}
+                   "balance": {"amount_minor": 5000, "currency": "USD", "exponent": 2}}}
         """.utf8)
         let credits = try #require(try UsageDecoding.snapshot(from: data).usageCredits)
         #expect(credits.used == Decimal(string: "12.34"))
         #expect(credits.balance == 50)
-        #expect(credits.extraUsageEnabled)
     }
 
     @Test func profileDecodesToPlan() throws {
