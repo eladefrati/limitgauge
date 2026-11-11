@@ -62,9 +62,9 @@ final class SettingsWindow: NSObject, NSWindowDelegate {
         scopedLabel.font = .systemFont(ofSize: 13)
         self.grid = grid
 
-        for (field, selector) in [(sessionField, #selector(thresholdChanged)), (weekField, #selector(thresholdChanged)), (scopedField, #selector(thresholdChanged))] {
+        for field in [sessionField, weekField, scopedField] {
             field.target = self
-            field.action = selector
+            field.action = #selector(thresholdChanged)
         }
         notifications.target = self
         notifications.action = #selector(notificationsChanged)
