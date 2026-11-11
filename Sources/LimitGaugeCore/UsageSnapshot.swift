@@ -85,10 +85,14 @@ public struct UsageCredits: Equatable, Sendable, Codable {
 public struct LimitResets: Equatable, Sendable, Codable {
     public var eligible: Bool
     public var grants: [String]
+    /// Set when the endpoint withholds the grants from this client ("surface": it serves them
+    /// only to Claude Code itself), so an empty `grants` does not mean the account has none.
+    public var ineligibleReason: String?
 
-    public init(eligible: Bool, grants: [String]) {
+    public init(eligible: Bool, grants: [String], ineligibleReason: String? = nil) {
         self.eligible = eligible
         self.grants = grants
+        self.ineligibleReason = ineligibleReason
     }
 }
 
@@ -227,7 +231,8 @@ public enum UsageDecoding {
         }
 
         let resets = raw.cedar_ember?.value.map { c in
-            LimitResets(eligible: c.eligible ?? false, grants: (c.grants ?? []).map(\.label))
+            LimitResets(eligible: c.eligible ?? false, grants: (c.grants ?? []).map(\.label),
+                        ineligibleReason: c.ineligible_reason)
         }
 
         let breakdown = raw.seven_day_breakdown?.value?.rows.map { rows in
@@ -364,6 +369,7 @@ struct RawResets: Decodable {
         }
     }
     var eligible: Bool?
+    var ineligible_reason: String?
     var grants: [Grant]?
 }
 

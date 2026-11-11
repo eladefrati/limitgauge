@@ -146,7 +146,7 @@ final class StatusMenu: NSObject, NSMenuDelegate {
                 }
                 extras.append(MenuRows.keyValue("Usage credits", value))
             }
-            if let resets = snapshot.limitResets {
+            if let resets = snapshot.limitResets, resets.ineligibleReason == nil {
                 let value = resets.grants.isEmpty ? "No resets right now" : resets.grants.joined(separator: ", ")
                 extras.append(MenuRows.keyValue("Limit resets", value))
             }

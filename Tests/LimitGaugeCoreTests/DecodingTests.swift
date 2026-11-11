@@ -54,6 +54,7 @@ private func utc(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ mi: Int, _ s: Double
         let resets = try #require(snap.limitResets)
         #expect(resets.eligible == false)
         #expect(resets.grants.isEmpty)
+        #expect(resets.ineligibleReason == nil)
 
         let breakdown = try #require(snap.weeklyBreakdown)
         #expect(breakdown == [
@@ -171,6 +172,16 @@ private func utc(_ y: Int, _ mo: Int, _ d: Int, _ h: Int, _ mi: Int, _ s: Double
         let snap = try UsageDecoding.snapshot(from: data)
         #expect(snap.unreadableLimitKinds == ["session", ""])
         #expect(!snap.sessionIsIdle)
+    }
+
+    @Test func withheldResetsKeepTheirReason() throws {
+        let data = Data("""
+        {"limits": [{"kind": "session", "percent": 1, "resets_at": "2030-01-07T05:00:00+00:00"}],
+         "cedar_ember": {"eligible": false, "ineligible_reason": "surface", "grants": []}}
+        """.utf8)
+        let resets = try #require(try UsageDecoding.snapshot(from: data).limitResets)
+        #expect(resets.ineligibleReason == "surface")
+        #expect(resets.grants.isEmpty)
     }
 
     @Test func snapshotSavedBeforeStillDecodes() throws {
