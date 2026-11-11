@@ -39,6 +39,9 @@ limitgauge has no prebuilt download. Build it from source:
 from Applications. It runs in the menu bar and has no Dock icon. On first launch, macOS asks
 whether limitgauge can send notifications.
 
+`make install` doesn't restart a running limitgauge. After an upgrade, quit it from its menu
+and open it again.
+
 If your keychain has an Apple Development certificate, `make install` signs with the first
 one it finds. To use a different one, run `make install SIGN_IDENTITY="<certificate name>"`.
 Without a certificate, `make install` signs the build ad hoc, and macOS can reset the
