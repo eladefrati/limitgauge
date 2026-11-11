@@ -1,7 +1,7 @@
 import Foundation
 
 /// Identifies one warning: a limit within one reset window. A new `resets_at` is a new key,
-/// which re-arms the warning (proposal, Warnings).
+/// which re-arms the warning (PRD, Warnings).
 ///
 /// `resetsAt` is rounded to the nearest minute. The endpoint shifts `resets_at` by under a
 /// second between fetches in the same window (21:10:00.462, then 21:09:59.776, captured

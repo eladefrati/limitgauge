@@ -1,6 +1,6 @@
 import Foundation
 
-/// Per-limit warning thresholds in percent. Defaults from the proposal.
+/// Per-limit warning thresholds in percent. Defaults from the PRD.
 public struct WarningThresholds: Equatable, Sendable, Codable {
     public var session: Int
     public var weeklyAll: Int

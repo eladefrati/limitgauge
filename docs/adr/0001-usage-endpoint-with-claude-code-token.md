@@ -10,7 +10,7 @@ date: 2026-10-18
 
 ## Context
 
-The app needs the numbers on the claude.ai Usage page ([proposal](../proposal.md)): three
+The app needs the numbers on the claude.ai Usage page ([proposal](../PRD.md)): three
 rate limits with reset times, two kinds of credits, and the weekly breakdown. Three sources
 were available:
 

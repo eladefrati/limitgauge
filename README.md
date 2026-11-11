@@ -129,10 +129,8 @@ new build from `build/limitgauge.app`.
 Run limitgauge only from its app bundle. `swift run` and `.build/release/limitgauge` crash at
 launch, because Notification Center needs the bundle's identifier.
 
-The [proposal](docs/proposal.md) is the original design, kept as written. The
-[ADRs](docs/adr/) record the decisions since, and
-[changes since the proposal](docs/changes-since-proposal.md) lists where limitgauge differs
-from the proposal.
+The [PRD](docs/PRD.md) describes what limitgauge is for and how it behaves. The
+[ADRs](docs/adr/) record the decisions behind it.
 
 ## License
 
