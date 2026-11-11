@@ -143,13 +143,21 @@ enum WarningTracker {
 
     /// A limit whose window has reset since the fetch is unknown and never due (ADR-0005
     /// point 4).
+    ///
+    /// A fired key outlives a fetch that lacks its limit, until its reset time: the endpoint
+    /// can drop a limit or send it unreadable for a fetch or two, and the same window must not
+    /// warn again when the limit comes back.
     static func evaluate(
         snapshot: UsageSnapshot,
         thresholds: WarningThresholds,
         fired previous: Set<WarningKey>,
         at now: Date
     ) -> Outcome {
-        let fired = previous.intersection(snapshot.limits.map { WarningKey($0) })
+        let current = Set(snapshot.limits.map { WarningKey($0) })
+        let currentKinds = Set(current.map(\.kind))
+        let fired = previous.filter {
+            current.contains($0) || (!currentKinds.contains($0.kind) && $0.resetsAt > now)
+        }
         var seen = fired
         let due = snapshot.limits.filter {
             thresholds.state(of: $0, at: now) == .past && seen.insert(WarningKey($0)).inserted

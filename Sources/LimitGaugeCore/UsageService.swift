@@ -123,8 +123,8 @@ public final class UsageService {
     @discardableResult
     public func reevaluateWarnings() -> Task<Void, Never> {
         if let snapshot {
-            let past = snapshot.limits.filter { thresholds().state(of: $0, at: now()) == .past }.map { WarningKey($0) }
-            setFired(fired.intersection(past))
+            let belowNow = snapshot.limits.filter { thresholds().state(of: $0, at: now()) != .past }.map { WarningKey($0) }
+            setFired(fired.subtracting(belowNow))
         }
         onChange?()
         return Task {

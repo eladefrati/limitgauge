@@ -75,6 +75,18 @@ final class GatedDelivery: WarningDelivery {
         #expect(delivery.identifiers == [WarningKey(RateLimit(kind: .weeklyScoped, percent: 83, resetsAt: b, scopeName: "Fable")).notificationIdentifier])
     }
 
+    /// A fetch that lacks the limit, as when the endpoint sends it unreadable, does not re-arm
+    /// its warning: the same window warns once.
+    @Test func limitMissingFromOneFetchDoesNotRefire() async {
+        let withoutSession = UsageSnapshot(
+            limits: [RateLimit(kind: .weeklyAll, percent: 10, resetsAt: t0.addingTimeInterval(36 * 3600))], fetchedAt: t0)
+        let delivery = RecordingDelivery()
+        let rig = Rig(usage: [.success(snapshot(percent: 90)), .success(withoutSession), .success(snapshot(percent: 92))],
+                      delivery: delivery)
+        for _ in 0..<3 { _ = await rig.service.refresh(.refreshRow).value }
+        #expect(delivery.offered.map(\.percent) == [90])
+    }
+
     @Test func warningBeingDeliveredIsNotOfferedTwice() async {
         let delivery = GatedDelivery()
         let rig = Rig(usage: [.success(snapshot(percent: 90))], delivery: delivery)

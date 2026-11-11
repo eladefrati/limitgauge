@@ -127,6 +127,19 @@ private func streak(_ count: Int, at date: Date, _ problem: UsageProblem = .offl
         #expect(second.firedInCurrentWindows.isEmpty)
     }
 
+    /// A fetch without the limit keeps its fired key while the window is open, and drops it
+    /// once the window has reset.
+    @Test func limitMissingFromAFetchKeepsItsKeyUntilItsReset() {
+        let delivered: Set<WarningKey> = [WarningKey(snap(session: 85, week: 20, fable: 10).limits[0])]
+        let withoutSession = UsageSnapshot(limits: [RateLimit(kind: .weeklyAll, percent: 20, resetsAt: weekReset)], fetchedAt: now)
+
+        let during = WarningTracker.evaluate(snapshot: withoutSession, thresholds: t, fired: delivered, at: now)
+        #expect(during.firedInCurrentWindows == delivered)
+
+        let after = WarningTracker.evaluate(snapshot: withoutSession, thresholds: t, fired: delivered, at: sessionReset.addingTimeInterval(1))
+        #expect(after.firedInCurrentWindows.isEmpty)
+    }
+
     @Test func belowThresholdFiresNothing() {
         let out = WarningTracker.evaluate(snapshot: snap(session: 79, week: 84, fable: 79), thresholds: t, fired: [], at: now)
         #expect(out.due.isEmpty)
